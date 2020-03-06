@@ -407,7 +407,7 @@ def get_categories(data_df, categories_yml):
     return data_df
 
 
-def filter_by_first_fixation(data_df, valid=True):
+def filter_by_first_fixation(data_df, valid=False):
     """
     Keep only the data points corresponding to the first fixations of each pair
     of images and subjects. The attentional engagement is also computed.
@@ -448,6 +448,12 @@ def filter_by_first_fixation(data_df, valid=True):
             engagement.append(df_engagement.duration.sum())
         else: engagement.append(-1)
 
+    # Add RT data
+    data_df["RT"] = np.nan
+    for i in range(0, len(data_df)):
+        if data_df["fix"][i] == 1:
+            data_df["RT"][i+1] = data_df["end"][i]
+
     # Keep only first fixation
     if valid:
         data_df = data_df.loc[(data_df.fix == 2) & (data_df.valid == True), :]
@@ -467,7 +473,7 @@ def filter_by_first_fixation(data_df, valid=True):
 
 def filter_by_time(data_df):
     """
-    Keep only one data point per pair of images and subject, retrieving new
+    Keep only one data point per pair of images and subject, retreiving new
     information regarding the time every side (left/right) is fixated. New keys
     are:
 
