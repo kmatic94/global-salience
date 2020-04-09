@@ -407,7 +407,7 @@ def get_categories(data_df, categories_yml):
     return data_df
 
 
-def filter_by_first_fixation(data_df, valid=False):
+def filter_by_first_fixation(data_df, valid=True):
     """
     Keep only the data points corresponding to the first fixations of each pair
     of images and subjects. The attentional engagement is also computed.
