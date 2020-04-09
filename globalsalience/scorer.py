@@ -75,7 +75,8 @@ class PairwiseComparisonsScorer:
             Number of folds in the parameter cross-validation partitions
 
         target : str
-            One of: 'first' or 'longer' or 'more' or 'time' or 'number'
+            One of: 'first' or 'longer' or 'more' or 'time' or 'number' or
+            'SRT'
             Specifies the target variable for the analysis of information that
             must be filter and retrieved. Options are:
 
@@ -94,6 +95,7 @@ class PairwiseComparisonsScorer:
 
                 'avg_dur' : average fixation duration (scalar)
 
+                'SRT' : saccadic reaction time of first saccade (scalar)
         valid : bool
             Whether only the trials marked as 'valid' must be used.
 
@@ -150,7 +152,7 @@ class PairwiseComparisonsScorer:
         self.task_bias = task_bias
         self.familiarity_bias = familiarity_bias
 
-        if target == 'first':
+        if target == 'first' or 'SRT':
             self.filter_type = 'first_fix'
         elif target == 'time' or target == 'longer' or \
              target == 'longer_avg_dur' or target == 'avg_dur':
@@ -318,7 +320,7 @@ class PairwiseComparisonsScorer:
             x_matrix[self.data_df.loc[
                 (self.data_df.block == 2) &
                 (self.data_df.old_new_comb == 3)].index.tolist(), -1] = 1
-
+    
         # Familiarity bias
         if self.familiarity_bias:
             # bias term:
@@ -355,6 +357,8 @@ class PairwiseComparisonsScorer:
             y = self.data_df.n_fixations_right
         elif self.target == 'avg_dur':
             y = self.data_df.avg_dur_right
+        elif self.target == 'SRT':
+            y = self.data_df.RT
         else:
             raise ValueError('Please specify a valid target type')
 
@@ -717,7 +721,7 @@ class PairwiseComparisonsScorer:
         if self.target in ['first', 'longer', 'longer_avg_dur', 'more']:
             ml_mode = 'classification'
             metrics = ['accuracy', 'auc', 'r2tjur', 'logloss', 'bic', 'aic']
-        elif self.target in ['time', 'number']:
+        elif self.target in ['time', 'number', 'SRT']:
             ml_mode = 'regression'
             metrics = ['r2', 'mse', 'mae']
         else:
