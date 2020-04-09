@@ -1,4 +1,3 @@
-# karla's forked test
 """
 Pairwise Comparisons Scorer
 
