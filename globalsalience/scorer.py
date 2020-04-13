@@ -53,7 +53,7 @@ class PairwiseComparisonsScorer:
 
     def __init__(self, data=None, bias_type='subject', subject_aware=True,
                  val_folds=5, target='first', valid=True, task_bias=True,
-                 familiarity_bias=True):
+                 familiarity_bias=True, GVS_bias=True):
         """
         Parameters
         ----------
@@ -106,6 +106,9 @@ class PairwiseComparisonsScorer:
         familiarity_bias : bool
             Whether to use a bias term to model the familiarity effect.
 
+        GVS_bias : bool
+            Whether to use GVS scores to model the difficulty of the trials.
+
         Attributes
         ----------
         weights : ndarray, shape (n_img,)
@@ -151,6 +154,7 @@ class PairwiseComparisonsScorer:
         self.valid = valid
         self.task_bias = task_bias
         self.familiarity_bias = familiarity_bias
+        self.GVS_bias = GVS_bias
 
         if target == 'first' or 'SRT':
             self.filter_type = 'first_fix'
@@ -806,9 +810,14 @@ class PairwiseComparisonsScorer:
         else:
             cv = self.val_folds
 
-        # Train logistic regression
-        gscv = self.train_cv_log_reg(self.x_matrix, self.y, cv)
-        estimator = gscv.best_estimator_
+        # Train regression model
+        if ml_mode == 'regression':
+            estimator = self.train_lin_reg(self.x_matrix, self.y)
+        elif ml_mode == 'classification':
+            gscv = self.train_cv_log_reg(self.x_matrix, self.y, cv)
+            estimator = gscv.best_estimator_
+        else:
+            raise ValueError()
 
         # Get coefficients of the regression model
         coefficients = estimator.coef_.squeeze()
@@ -836,7 +845,13 @@ class PairwiseComparisonsScorer:
         else:
             raise NotImplementedError()
 
-        if self.familiarity_bias:
+        if self.GVS_bias:
+            self.coeff_GVS = coefficients[-1]
+            if self.familiarity_bias:
+                self.coeff_familiarity = coefficients[-2]
+                if self.task_bias:
+                    self.coeff_task = coefficients[-3]
+        elif self.familiarity_bias:
             self.coeff_familiarity = coefficients[-1]
             if self.task_bias:
                 self.coeff_task = coefficients[-2]
