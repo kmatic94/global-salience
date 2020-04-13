@@ -8,7 +8,7 @@ FLAGS = None
 def main(argv=None):
 
     scorer = PairwiseComparisonsScorer(target=FLAGS.target)
-    scorer.load_data(FLAGS.input, compute_features=FLAGS.input_is_raw, 
+    scorer.load_data(FLAGS.input, compute_features=False,
                      do_filter=True)
     if FLAGS.output:
         scorer.data_df.to_csv(FLAGS.output, index_label='index')
