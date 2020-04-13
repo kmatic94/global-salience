@@ -14,6 +14,7 @@ from random import shuffle
 from tqdm import tqdm
 
 from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.dummy import DummyRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, log_loss, roc_curve
@@ -271,7 +272,9 @@ class PairwiseComparisonsScorer:
 
         Note that the order of the coefficients is:
         | images | lateral (subject) | task | familiarity |
-        which is different to the order illustrated in the manuscript
+        which is different to the order illustrated in the manuscript.
+
+        When predicting SRTs, optionally include GVS scores of the images.
 
         Parameters
         ----------
@@ -341,6 +344,11 @@ class PairwiseComparisonsScorer:
         if self.bias_type == 'subject':
             x_matrix[self.data_df.index, 
                      self.n_img + self.data_df.subject_index - 1] = 1
+
+        # Global salience 
+        if self.target == 'SRT':
+            x_matrix = np.c_[x_matrix, self.data_df.global_salience_left]
+            x_matrix = np.c_[x_matrix, self.data_df.global_salience_right]
 
         # Target (y)
         if self.target == 'first':
@@ -727,7 +735,7 @@ class PairwiseComparisonsScorer:
         else:
             raise NotImplementedError(
                 'Logistic regression classification can only be '
-                'trained with binary targets: first, longer, '
+                'trained with binaryi targets: first, longer, '
                 'longer_avg_dur, more; Linear regression can only be '
                 'trained with scalar targets: time, number ')
 
@@ -742,7 +750,10 @@ class PairwiseComparisonsScorer:
 
             # Compute random baseline
             if shuffle_labels:
-                shuffle(y_tr.values)
+                if ml_mode == 'regression':
+                    dummy_regr = DummyRegressor(strategy="mean")
+                elif ml_mode == 'classification':
+                    shuffle(y_tr.values)
 
 	    # Train model
             if self.subject_aware and not shuffle_labels:
@@ -756,7 +767,7 @@ class PairwiseComparisonsScorer:
                     raise ValueError()
             else:
                 if ml_mode == 'regression':
-                    estimator = self.train_lin_reg(x_tr, y_tr)
+                    estimator = dummy_regr.fit(x_tr, y_tr)
                 elif ml_mode == 'classification':
                     cv = self.val_folds
                     gscv = self.train_cv_log_reg(x_tr, y_tr, cv)
