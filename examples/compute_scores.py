@@ -11,7 +11,7 @@ FLAGS = None
 def main(argv=None):
 
     # Initialize the scorer and load the first fixations data set
-    scorer = PairwiseComparisonsScorer(target='first')
+    scorer = PairwiseComparisonsScorer(target=FLAGS.target)
     scorer.load_data(FLAGS.input, compute_features=False, do_filter=False)
 
     # Initialize DataFrame
@@ -26,7 +26,7 @@ def main(argv=None):
             in range(scorer.n_subj)]
     else:
         raise NotImplementedError()
-    columns = columns_zscores + columns_lateral + ['task', 'familiarity']
+    columns = columns_zscores + columns_lateral + ['task', 'familiarity', 'GVS']
     df_scores = pd.DataFrame()
 
     # Compute scores
@@ -40,7 +40,8 @@ def main(argv=None):
                              scorer.coeff_task, scorer.coeff_familiarity))
         elif scorer.bias_type == 'subject':
             mat = np.hstack((scorer.zscores, scorer.coeff_subjects, 
-                             scorer.coeff_task, scorer.coeff_familiarity))
+                             scorer.coeff_task, scorer.coeff_familiarity,
+                             scorer.coeff_GVS))
         else:
             raise NotImplementedError()
         d = pd.DataFrame(data=np.expand_dims(mat, axis=0),
@@ -61,6 +62,14 @@ if __name__ == '__main__':
         default='../data/data_firstfixation.csv',
         help='Path to the input file'
     )
+
+    parser.add_argument(
+        '--target',
+        type=str,
+        default='first',
+        help='Scorer target for prediction'
+    )
+
     parser.add_argument(
         '--n_rep',
         type=int,
